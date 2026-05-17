@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flistories - Literasi Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; background-color: #f8fafc; }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .paper-read { background-color: #fdfbf7; color: #1e293b; line-height: 2; font-size: 1.125rem; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .fade-in { animation: fadeIn 0.25s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="font-sans antialiased bg-slate-100 text-slate-800">
+
+    <div class="max-w-md md:max-w-4xl mx-auto bg-white min-h-screen shadow-2xl flex flex-col relative overflow-hidden transition-all duration-300">
+
+        <div id="login-page" class="flex flex-col h-screen justify-center px-6 md:px-24 relative fade-in bg-gradient-to-b from-emerald-50 to-white">
+            <div class="absolute top-6 left-0 right-0 text-center">
+                <p class="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Powered by Gemini 3.1 Pro & CV L.Kastara.Narasi</p>
+            </div>
+            <div class="text-center mb-8">
+                <div class="bg-emerald-600 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-emerald-200 rotate-3">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                </div>
+                <h1 class="text-3xl font-black text-slate-900 tracking-tight">Flistories</h1>
+                <p class="text-slate-500 text-xs mt-1 font-medium">Platform Ruang Baca & Penerbitan Cerpen Digital</p>
+            </div>
+            <div class="space-y-4 bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Nama Lengkap</label>
+                    <input type="text" id="login-name" placeholder="Ketik nama Anda..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Nomor Handphone</label>
+                    <input type="number" id="login-phone" placeholder="Contoh: 0812345678" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-sm">
+                </div>
+                <button onclick="masukAkun()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-700 active:scale-[0.99] transition shadow-lg shadow-emerald-200 mt-2 text-sm">Masuk Perpustakaan</button>
+            </div>
+        </div>
+
+        <div id="user-page" class="hidden flex-1 flex-col h-screen fade-in">
+            <div class="bg-emerald-600 text-white p-5 rounded-b-3xl shadow-lg z-20">
+                <div class="flex justify-between items-center mb-3">
+                    <div>
+                        <h2 class="text-xl font-black tracking-tight flex items-center gap-1.5">Flistories</h2>
+                        <p class="text-[9px] text-emerald-200 font-medium" id="halo-user">Halo, Pembaca</p>
+                    </div>
+                    <button onclick="keluarAkun()" class="text-[10px] bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg font-bold uppercase tracking-wider transition">Keluar</button>
+                </div>
+                <div class="relative">
+                    <input type="text" id="search-input" onkeyup="cariCerpen()" placeholder="Cari judul cerita resmi di sini..." class="w-full px-4 py-2.5 pl-10 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:bg-white/20 text-sm">
+                    <svg class="w-4 h-4 absolute left-4 top-3.5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+            </div>
+
+            <div id="tab-beranda" class="flex-1 overflow-y-auto pb-24 bg-slate-50/60">
+                <div class="pt-5 pb-2">
+                    <h3 class="px-5 font-black text-slate-800 text-base mb-3 flex items-center gap-2">
+                        <span>🏆</span> Top Best Seller (Paling Banyak Dibaca)
+                    </h3>
+                    <div id="list-bestseller" class="flex overflow-x-auto gap-4 px-5 pb-3 hide-scrollbar">
+                        </div>
+                </div>
+                <div class="px-5 pb-6 space-y-6" id="kategori-container">
+                    </div>
+            </div>
+
+            <div id="tab-nulis" class="hidden flex-1 overflow-y-auto pb-24 bg-white p-5">
+                <div class="border-b border-slate-100 pb-4 mb-5">
+                    <h3 class="font-black text-emerald-800 text-2xl">Mading Penulis</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Kirim karya cerpenmu, pantau status persetujuan penerbit secara langsung.</p>
+                </div>
+                
+                <div id="form-biodata" class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Verifikasi Data Penulis</h4>
+                    <input type="number" id="nulis-nik" placeholder="Masukkan NIK / Nomor Kartu Pelajar" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 font-medium text-sm">
+                    <input type="number" id="nulis-tahun" placeholder="Tahun Kelahiran (Contoh: 2011)" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 font-medium text-sm">
+                    <button onclick="lanjutNulis()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition shadow-md text-sm">Mulai Menulis Naskah</button>
+                </div>
+
+                <div id="form-naskah" class="hidden space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded">Lembar Kerja Naskah</span>
+                        <span id="badge-mode-tulis" class="text-[10px] font-bold text-slate-400">Mode: Naskah Baru</span>
+                    </div>
+                    <input type="text" id="nulis-judul" placeholder="Tulis Judul Cerpen Menarik..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 font-black text-lg text-slate-800">
+                    <div class="relative">
+                        <textarea id="nulis-isi" oninput="hitungKata()" placeholder="Tulis jalinan cerita cerpenmu disini... (Maksimal 2000 kata)" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 text-sm h-64 resize-none hide-scrollbar font-medium"></textarea>
+                        <p id="word-count" class="absolute bottom-3 right-4 text-[10px] font-black text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-100 shadow-sm">0 / 2000 kata</p>
+                    </div>
+                    <button onclick="kirimNaskah()" id="btn-kirim-naskah" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition shadow-lg text-sm">Kirim ke Meja Penerbit</button>
+                    <button onclick="batalNulis()" class="w-full bg-slate-100 text-slate-600 font-bold py-2 rounded-xl text-xs">Batal & Bersihkan</button>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-100">
+                    <h4 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-1.5">📝 Riwayat Status Karya Saya</h4>
+                    <div id="mading-riwayat-container" class="space-y-3">
+                        </div>
+                </div>
+            </div>
+
+            <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 flex justify-around p-3 z-20 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+                <button onclick="switchTab('beranda')" id="nav-beranda" class="flex flex-col items-center text-emerald-600 w-1/2 transition">
+                    <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    <span class="text-[10px] font-black">Jelajah Cerita</span>
+                </button>
+                <button onclick="switchTab('nulis')" id="nav-nulis" class="flex flex-col items-center text-slate-400 w-1/2 transition">
+                    <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    <span class="text-[10px] font-black">Mading Saya</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="detail-page" class="hidden absolute inset-0 bg-white z-50 flex flex-col fade-in">
+            <div class="relative h-72 bg-slate-900 flex-shrink-0">
+                <img id="detail-cover" src="" class="w-full h-full object-cover opacity-50">
+                <div class="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
+                <button onclick="tutupDetail()" class="absolute top-4 left-4 bg-black/40 text-white p-2 rounded-full backdrop-blur-md hover:bg-black/60 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+            </div>
+            <div class="p-6 flex-1 overflow-y-auto bg-white rounded-t-3xl -mt-12 relative z-10">
+                <span id="detail-kategori" class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">Kategori</span>
+                <h2 id="detail-judul" class="text-2xl font-black text-slate-900 mt-3 leading-tight">Judul Buku</h2>
+                <p class="text-xs text-slate-500 font-bold mt-1">Karya Asli: <span id="detail-penulis" class="text-emerald-600">Nama Penulis</span></p>
+                
+                <div class="grid grid-cols-2 gap-4 mt-6 border-y border-slate-100 py-4">
+                    <div>
+                        <p class="text-[9px] text-slate-400 uppercase font-black tracking-wider">Penerbit Resmi</p>
+                        <p class="text-xs font-black text-slate-800 mt-0.5" id="detail-penerbit">-</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-slate-400 uppercase font-black tracking-wider">Batas Rating Umur</p>
+                        <p class="text-xs font-black text-slate-800 mt-0.5" id="detail-umur">-</p>
+                    </div>
+                    <div class="col-span-2">
+                        <p class="text-[9px] text-slate-400 uppercase font-black tracking-wider">Nomor Registrasi Karya</p>
+                        <p class="text-xs font-mono font-black text-emerald-700 mt-1 bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-100/50" id="detail-qrcbn">-</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white border-t border-slate-100 shadow-[0_-8px_24px_rgba(0,0,0,0.04)]">
+                <button onclick="mulaiMembaca()" class="w-full bg-emerald-600 text-white font-black py-4 rounded-xl shadow-xl hover:bg-emerald-700 transition text-base tracking-wide">BUKA LEMBAR BACAAN</button>
+            </div>
+        </div>
+
+        <div id="read-page" class="hidden absolute inset-0 paper-read z-[60] flex flex-col fade-in">
+            <div class="bg-white/95 backdrop-blur-md border-b border-slate-200 p-4 sticky top-0 flex items-center gap-3 z-10 shadow-sm">
+                <button onclick="batalBaca()" class="text-slate-600 p-1 hover:bg-slate-100 rounded-full transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+                <h3 id="read-judul" class="font-bold text-xs truncate flex-1 text-slate-700 uppercase tracking-wider">Judul Cerita</h3>
+            </div>
+            <div class="p-6 md:px-20 flex-1 overflow-y-auto">
+                <h1 id="read-judul-besar" class="text-3xl font-black mb-8 text-center text-slate-900 mt-4 leading-snug">Judul Besar</h1>
+                <div id="read-isi" class="text-justify whitespace-pre-wrap font-medium tracking-wide text-base md:text-lg text-slate-800 pb-16">Isi cerita...</div>
+                
+                <div class="mt-12 mb-12 text-center border-t border-slate-200 pt-8">
+                    <p class="text-xs text-slate-400 font-bold mb-4 uppercase tracking-widest">Akhir dari Lembar Cerita</p>
+                    <button onclick="selesaiBaca()" class="bg-emerald-600 text-white font-black py-3 px-10 rounded-xl shadow-lg hover:bg-emerald-700 transition text-sm tracking-wide">Selesai Membaca</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="admin-page" class="hidden flex-1 flex-col h-screen fade-in bg-slate-900 text-slate-100">
+            <div class="bg-slate-950 p-5 shadow-lg flex justify-between items-center border-b border-slate-800">
+                <div>
+                    <h2 class="text-lg font-black text-emerald-400 tracking-tight uppercase">Penerbit Utama CEO</h2>
+                    <p class="text-[9px] text-slate-400 font-bold tracking-wider">Sistem Penyeleksian Naskah Infinite</p>
+                </div>
+                <button onclick="keluarAkun()" class="text-[10px] bg-red-600/90 hover:bg-red-700 px-3 py-1.5 rounded-lg font-black uppercase tracking-wider transition text-white">Logout Admin</button>
+            </div>
+
+            <div id="admin-list" class="flex-1 overflow-y-auto p-5 space-y-4">
+                <h3 class="font-black text-xs text-slate-400 uppercase tracking-widest border-b border-slate-800 pb-2">Gudang Antrean Naskah Masuk</h3>
+                <div id="draft-container" class="space-y-3">
+                    </div>
+            </div>
+
+            <div id="admin-edit-modal" class="hidden absolute inset-0 bg-slate-950/95 z-50 flex flex-col fade-in md:p-6">
+                <div class="bg-slate-900 p-4 md:rounded-t-2xl flex justify-between items-center border-b border-slate-800 shadow-md">
+                    <div>
+                        <h3 class="font-black text-sm text-white uppercase tracking-wider">Editor Panel Redaksi</h3>
+                        <p class="text-[9px] text-slate-400 font-bold">Penulis: <span id="admin-info-penulis" class="text-emerald-400">Nama</span></p>
+                    </div>
+                    <button onclick="tutupAdminEdit()" class="text-slate-400 hover:text-white p-1 bg-slate-800 rounded-full transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto p-5 bg-slate-900 md:rounded-b-2xl space-y-4 shadow-inner">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Judul Cerpen Warga</label>
+                        <input type="text" id="admin-judul" class="w-full px-4 py-2.5 bg-slate-800 text-white border border-slate-700 rounded-xl focus:outline-none focus:border-emerald-500 font-bold text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Koreksi Teks & Edit Ejaan Naskah</label>
+                        <textarea id="admin-isi" class="w-full px-4 py-3 bg-slate-800 text-white border border-slate-700 rounded-xl h-44 focus:outline-none focus:border-emerald-500 text-xs font-medium leading-relaxed hide-scrollbar"></textarea>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Tentukan Kategori Rak</label>
+                            <select id="admin-kategori" class="w-full px-3 py-2.5 bg-slate-800 text-white border border-slate-700 rounded-xl focus:outline-none text-xs font-bold">
+                                <option value="Romantis">Romantis</option>
+                                <option value="Horor">Horor</option>
+                                <option value="Sedih">Sedih</option>
+                                <option value="Komedi">Komedi</option>
+                                <option value="Slice of Life">Slice of Life</option>
+                                <option value="Masalah">Masalah</option>
+                                <option value="Kenangan">Kenangan</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Batas Klasifikasi Umur</label>
+                            <select id="admin-umur" class="w-full px-3 py-2.5 bg-slate-800 text-white border border-slate-700 rounded-xl focus:outline-none text-xs font-bold">
+                                <option value="Semua Umur">Semua Umur</option>
+                                <option value="13+">13+</option>
+                                <option value="18+">18+</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Nama Instansi Penerbit</label>
+                            <input type="text" id="admin-penerbit-input" value="CV L.Kastara.Narasi" placeholder="Ketik nama penerbit..." class="w-full px-3 py-2 bg-slate-800 text-white border border-slate-700 rounded-xl focus:outline-none text-xs font-bold">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Pasang Desain Cover Utama (Dari Galeri)</label>
+                        <input type="file" id="admin-cover" accept="image/*" onchange="prosesKonversiCover(event)" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-950 file:text-emerald-400 hover:file:bg-emerald-900 cursor-pointer">
+                        <img id="admin-cover-preview" src="" class="mt-3 h-36 w-28 object-cover rounded-xl shadow-lg hidden border border-slate-700 mx-auto">
+                    </div>
+                </div>
+                
+                <div class="p-4 bg-slate-950 md:rounded-b-2xl border-t border-slate-800 flex gap-3">
+                    <button onclick="eksekusiTolakAdmin()" class="w-1/3 bg-red-950 text-red-400 font-bold py-3.5 rounded-xl text-xs hover:bg-red-900 transition tracking-wide uppercase">Kembalikan (Revisi)</button>
+                    <button onclick="eksekusiTerbitAdmin()" class="w-2/3 bg-emerald-600 text-white font-black py-3.5 rounded-xl text-xs hover:bg-emerald-500 transition tracking-wide shadow-lg shadow-emerald-900/30 uppercase">Generate Flis-Code & Publish</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩
+        // KOTAK HIJAU KONFIGURASI UTAMA KETUA KELOMPOK ELIT
+        const ADMIN_PHONE = "081111"; // Kunci masuk bypass dashboard CEO Admin
+        
+        // PASTE PROYEK FIREBASE REALTIME DATABASE PROYEK KELOMPOK 2 KALIAN DISINI
+        const firebaseConfig = {
+            apiKey: "AIzaSyC_unzimO7YN9vi7zJ2B_ppsJvNPuZ925Q",
+            authDomain: "flistories.firebaseapp.com",
+            databaseURL: "https://flistories-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "flistories",
+            storageBucket: "flistories.firebasestorage.app",
+            messagingSenderId: "99537465115",
+            appId: "1:99537465115:web:94430a5d97e6f41cbdedbe"
+        };
+        // 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩
+
+        // Inisialisasi Firebase Core
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // State Memori Lokal Aplikasi (Menghindari Kebocoran Data Dom)
+        let currentUser = null;
+        let cachedDrafts = {};     // Menyimpan data draf secara utuh di memori lokal admin (Infinite aman)
+        let cachedPublished = [];  // Menyimpan data beranda utama warga resmi
+        let currentSelectedDraftId = null;
+        let tempCoverBase64 = "";
+        let currentStoryData = null;
+        let readerTimerStart = 0;
+        let currentEditRevisionId = null; // Menyimpan id jika warga mengedit draf revisi lamanya
+
+        // Listener Pemuat Pertama (Auto Login Local Storage)
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedHp = localStorage.getItem("flis_hp");
+            const savedName = localStorage.getItem("flis_name");
+            if (savedHp && savedName) {
+                currentUser = { nama: savedName, hp: savedHp };
+                document.getElementById('halo-user').innerText = `Halo, ${savedName}`;
+                rutekanHalamanAplikasi();
+            }
+        });
+
+        // Alur Login Akun
+        function masukAkun() {
+            const nama = document.getElementById('login-name').value.trim();
+            const hp = document.getElementById('login-phone').value.trim();
+
+            if (!nama || !hp) return alert("Peringatan: Kolom nama dan nomor HP wajib diisi!");
+            if (!hp.startsWith("08")) return alert("Format Salah: Nomor HP harus dimulai dengan angka 08!");
+
+            currentUser = { nama: nama, hp: hp };
+            localStorage.setItem("flis_hp", hp);
+            localStorage.setItem("flis_name", nama);
+            document.getElementById('halo-user').innerText = `Halo, ${nama}`;
+            rutekanHalamanAplikasi();
+        }
+
+        function keluarAkun() {
+            localStorage.removeItem("flis_hp");
+            localStorage.removeItem("flis_name");
+            window.location.reload();
+        }
+
+        // Router Pintar Pembagian Ruang Kerja
+        function rutekanHalamanAplikasi() {
+            document.getElementById('login-page').classList.add('hidden');
+            if (currentUser.hp === ADMIN_PHONE) {
+                document.getElementById('admin-page').classList.remove('hidden');
+                inisialisasiListenerAdmin();
+            } else {
+                document.getElementById('user-page').classList.remove('hidden');
+                inisialisasiListenerWarga();
+            }
+        }
+
+        function switchTab(tab) {
+            const btnBeranda = document.getElementById('nav-beranda');
+            const btnNulis = document.getElementById('nav-nulis');
+            
+            if (tab === 'beranda') {
+                document.getElementById('tab-beranda').classList.remove('hidden');
+                document.getElementById('tab-nulis').classList.add('hidden');
+                btnBeranda.classList.add('text-emerald-600'); btnBeranda.classList.remove('text-slate-400');
+                btnNulis.classList.add('text-slate-400'); btnNulis.classList.remove('text-emerald-600');
+            } else {
+                document.getElementById('tab-beranda').classList.add('hidden');
+                document.getElementById('tab-nulis').classList.remove('hidden');
+                btnNulis.classList.add('text-emerald-600'); btnNulis.classList.remove('text-slate-400');
+                btnBeranda.classList.add('text-slate-400'); btnBeranda.classList.remove('text-emerald-600');
+            }
+        }
+
+        // ================= LOGIKA UTAMA SISI WARGA (PENULIS) =================
+        function lanjutNulis() {
+            const nik = document.getElementById('nulis-nik').value.trim();
+            const tahun = document.getElementById('nulis-tahun').value.trim();
+            if(!nik || !tahun) return alert("Harap lengkapi nomor verifikasi identitas Anda terlebih dahulu!");
+            
+            document.getElementById('form-biodata').classList.add('hidden');
+            document.getElementById('form-naskah').classList.remove('hidden');
+        }
+
+        function batalNulis() {
+            document.getElementById('form-naskah').classList.add('hidden');
+            document.getElementById('form-biodata').classList.remove('hidden');
+            document.getElementById('nulis-judul').value = "";
+            document.getElementById('nulis-isi').value = "";
+            document.getElementById('badge-mode-tulis').innerText = "Mode: Naskah Baru";
+            currentEditRevisionId = null;
+            hitungKata();
+        }
+
+        function hitungKata() {
+            const teks = document.getElementById('nulis-isi').value.trim();
+            const kataArr = teks.split(/\s+/).filter(k => k.length > 0);
+            const jumlahKata = kataArr.length;
+            
+            const counter = document.getElementById('word-count');
+            counter.innerText = `${jumlahKata} / 2000 kata`;
+            
+            const btnKirim = document.getElementById('btn-kirim-naskah');
+            if (jumlahKata > 2000) {
+                counter.className = "absolute bottom-3 right-4 text-[10px] font-black text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100 shadow-sm";
+                btnKirim.disabled = true;
+                btnKirim.className = "w-full bg-slate-300 text-slate-500 font-bold py-3.5 rounded-xl cursor-not-allowed text-sm";
+            } else {
+                counter.className = "absolute bottom-3 right-4 text-[10px] font-black text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-100 shadow-sm";
+                btnKirim.disabled = false;
+                btnKirim.className = "w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition shadow-lg text-sm";
+            }
+            return jumlahKata;
+        }
+
+        function kirimNaskah() {
+            const judul = document.getElementById('nulis-judul').value.trim();
+            const isi = document.getElementById('nulis-isi').value.trim();
+            const nik = document.getElementById('nulis-nik').value.trim();
+            const tahun = document.getElementById('nulis-tahun').value.trim();
+
+            if (!judul || !isi) return alert("Kesalahan: Judul dan isi naskah tidak boleh kosong!");
+            if (hitungKata() > 2000) return alert("Penyusupan Gagalan: Naskah Anda terdeteksi melebihi batas regulasi 2000 kata!");
+
+            const payload = {
+                judul: judul,
+                isi: isi,
+                penulis: currentUser.nama,
+                hp_penulis: currentUser.hp,
+                nik: nik,
+                tahun_lahir: tahun,
+                status: "Antrean",
+                flis_code: "",
+                waktu_kirim: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            if (currentEditRevisionId) {
+                // Update naskah revisi lama, tidak menambah node baru baru
+                db.ref('flistories_drafts/' + currentEditRevisionId).set(payload, (err) => {
+                    if (!err) {
+                        alert("Sukses: Naskah revisi berhasil diperbarui dan dikirim ulang ke antrean admin!");
+                        batalNulis();
+                    }
+                });
+            } else {
+                // Dorong naskah baru murni
+                db.ref('flistories_drafts').push(payload, (err) => {
+                    if (!err) {
+                        alert("Sukses: Naskah baru Anda berhasil masuk antrean penyeleksian penerbit!");
+                        batalNulis();
+                    }
+                });
+            }
+        }
+
+        // Jalankan Pemuatan Realtime Data Sisi Warga (Beranda & Mading)
+        function inisialisasiListenerWarga() {
+            // 1. Ambil Data Beranda Terbit Resmi (Bebas Bug Duplikat)
+            db.ref('flistories_published').on('value', (snapshot) => {
+                cachedPublished = [];
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        cachedPublished.push({ id: child.key, ...child.val() });
+                    });
+                }
+                eksekusiRenderBeranda(cachedPublished);
+            });
+
+            // 2. Ambil Data Riwayat Mading Penulis Sesuai Nomor HP Pribadi
+            db.ref('flistories_drafts').on('value', (snapshot) => {
+                const container = document.getElementById('mading-riwayat-container');
+                container.innerHTML = ''; // Sapu bersih tumpukan lama
+                
+                let adakahData = false;
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        const draf = child.val();
+                        if (draf.hp_penulis === currentUser.hp) {
+                            adakahData = true;
+                            let badgeHTML = "";
+                            let aksiHTML = "";
+
+                            if (draf.status === "Antrean") {
+                                badgeHTML = `<span class="bg-amber-100 text-amber-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">🟡 Dalam Antrean</span>`;
+                            } else if (draf.status === "Revisi") {
+                                badgeHTML = `<span class="bg-red-100 text-red-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">🔴 Butuh Sentuhan Lagi</span>`;
+                                // Sediakan tombol re-upload instan tanpa ketik ulang
+                                aksiHTML = `<button onclick="muatUlangNaskahRevisi('${child.key}', \`${draf.judul.replace(/`/g, "'")}\`, \`${draf.isi.replace(/`/g, "'")}\`, '${draf.nik}', '${draf.tahun_lahir}')" class="mt-2 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 transition">Perbaiki Naskah Ini</button>`;
+                            } else if (draf.status === "Mengudara") {
+                                badgeHTML = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">🟢 Mengudara (${draf.flis_code})</span>`;
+                            }
+
+                            container.innerHTML += `
+                                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex flex-col justify-between items-start">
+                                    <div class="w-full flex justify-between items-start gap-2">
+                                        <h5 class="font-black text-slate-800 text-sm truncate flex-1">${draf.judul}</h5>
+                                        ${badgeHTML}
+                                    </div>
+                                    ${aksiHTML}
+                                </div>
+                            `;
+                        }
+                    });
+                }
+                if (!adakahData) {
+                    container.innerHTML = `<p class="text-xs text-slate-400 font-medium text-center py-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">Belum ada riwayat pengiriman naskah.</p>`;
+                }
+            });
+        }
+
+        function muatUlangNaskahRevisi(id, judul, isi, nik, tahun) {
+            currentEditRevisionId = id;
+            document.getElementById('nulis-nik').value = nik;
+            document.getElementById('nulis-tahun').value = tahun;
+            document.getElementById('nulis-judul').value = judul;
+            document.getElementById('nulis-isi').value = isi;
+            
+            document.getElementById('badge-mode-tulis').innerText = "Mode: Revisi Naskah Lama";
+            document.getElementById('form-biodata').classList.add('hidden');
+            document.getElementById('form-naskah').classList.remove('hidden');
+            hitungKata();
+            alert("Naskah lama berhasil dimuat kembali ke lembar kerja. Silakan perbaiki typos/ejaan Anda.");
+        }
+
+        // ================= RENDER BERANDA & SISTEM SEARCH (Bebas Bug Duplikat) =================
+        function eksekusiRenderBeranda(dataArray) {
+            const rakBestseller = document.getElementById('list-bestseller');
+            const rakKategoriContainer = document.getElementById('kategori-container');
+
+            // Sapu bersih total tumpukan visual agar tidak membelah diri/duplikat
+            rakBestseller.innerHTML = '';
+            rakKategoriContainer.innerHTML = '';
+
+            if (dataArray.length === 0) {
+                rakBestseller.innerHTML = `<p class="text-xs text-slate-400 font-medium py-2">Beranda kosong, menanti karya pertama mengudara...</p>`;
+                return;
+            }
+
+            // 1. Render Blok Top Best Seller (Urut Views Terbanyak - Infinite List Aman)
+            let sortedByViews = [...dataArray].sort((a, b) => b.views - a.views);
+            rakBestseller.innerHTML = sortedByViews.map(item => rakitKomponenCard(item)).join('');
+
+            // 2. Render Blok Berdasarkan Kategori Dinamis + "Baru Diupload"
+            const daftarKategori = ['Baru Diupload', 'Romantis', 'Horor', 'Sedih', 'Komedi', 'Slice of Life', 'Masalah', 'Kenangan'];
+            
+            daftarKategori.forEach(kat => {
+                let saringCerita = [];
+                if (kat === 'Baru Diupload') {
+                    saringCerita = [...dataArray].sort((a, b) => b.waktu_terbit - a.waktu_terbit);
+                } else {
+                    saringCerita = dataArray.filter(item => item.kategori === kat);
+                }
+
+                if (saringCerita.length > 0) {
+                    let kartuHTML = saringCerita.map(item => rakitKomponenCard(item)).join('');
+                    rakKategoriContainer.innerHTML += `
+                        <div class="fade-in">
+                            <h4 class="font-black text-slate-800 text-base mb-3 flex items-center gap-1.5"><span class="w-1.5 h-4 bg-emerald-600 rounded-full"></span>${kat}</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                ${kartuHTML}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function rakitKomponenCard(item) {
+            // Trik aman melempar ID saja ke function click agar struktur string HTML tidak rusak
+            return `
+                <div onclick="bukaOverlayDetail('${item.id}')" class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm active:scale-95 transition-all duration-200 cursor-pointer flex flex-col justify-between min-w-[140px] max-w-[180px] md:max-w-none w-full">
+                    <div class="h-40 bg-slate-100 relative">
+                        <img src="${item.cover}" class="w-full h-full object-cover">
+                        <span class="absolute top-2 right-2 bg-black/50 text-white text-[8px] font-black px-2 py-0.5 rounded-md backdrop-blur-sm uppercase tracking-wider">${item.kategori}</span>
+                    </div>
+                    <div class="p-3 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h5 class="font-black text-slate-800 text-xs md:text-sm truncate leading-tight">${item.judul}</h5>
+                            <p class="text-[10px] text-slate-400 font-medium truncate mt-0.5">Oleh: ${item.penulis}</p>
+                        </div>
+                        <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-50 text-[10px] font-bold text-slate-400">
+                            <span>👁️ ${item.views} Baca</span>
+                            <span class="font-mono text-[9px] text-emerald-600">${item.flis_code.split(' ')[0]}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function cariCerpen() {
+            const keyword = document.getElementById('search-input').value.toLowerCase().trim();
+            const hasilSaring = cachedPublished.filter(item => item.judul.toLowerCase().includes(keyword) || item.penulis.toLowerCase().includes(keyword));
+            eksekusiRenderBeranda(hasilSaring);
+        }
+
+        // ================= SYSTEM BACA DETAIL & LOGIKA ANTI-CHEAT COUNTER =================
+        function bukaOverlayDetail(id) {
+            const target = cachedPublished.find(item => item.id === id);
+            if (!target) return;
+
+            currentStoryData = target;
+            document.getElementById('detail-cover').src = target.cover;
+            document.getElementById('detail-kategori').innerText = target.kategori;
+            document.getElementById('detail-judul').innerText = target.judul;
+            document.getElementById('detail-penulis').innerText = target.penulis;
+            document.getElementById('detail-penerbit').innerText = target.penerbit;
+            document.getElementById('detail-umur').innerText = target.umur;
+            document.getElementById('detail-qrcbn').innerText = target.flis_code;
+
+            document.getElementById('detail-page').classList.remove('hidden');
+        }
+
+        function tutupDetail() {
+            document.getElementById('detail-page').classList.add('hidden');
+            currentStoryData = null;
+        }
+
+        function mulaiMembaca() {
+            if (!currentStoryData) return;
+
+            document.getElementById('read-judul').innerText = currentStoryData.judul;
+            document.getElementById('read-judul-besar').innerText = currentStoryData.judul;
+            document.getElementById('read-isi').innerText = currentStoryData.isi;
+
+            document.getElementById('detail-page').classList.add('hidden');
+            document.getElementById('read-page').classList.remove('hidden');
+
+            // Kunci Waktu Detik Mulai Baca Sebenarnya
+            readerTimerStart = Date.now();
+            document.getElementById('read-page').children[1].scrollTop = 0; // Kembalikan scroll ke atas
+        }
+
+        function batalBaca() {
+            document.getElementById('read-page').classList.add('hidden');
+            document.getElementById('detail-page').classList.remove('hidden');
+            readerTimerStart = 0;
+        }
+
+        function selesaiBaca() {
+            const hitungDurasiMs = Date.now() - readerTimerStart;
+            
+            // Validasi Sensor Detik Rahasia (Minimal 20 Detik = 20000ms)
+            if (hitungDurasiMs < 20000) {
+                alert("Pemberitahuan: Anda membaca terlalu cepat. Selesaikan membaca naskah hingga selesai untuk mengapresiasi jerih payah penulis!");
+                return;
+            }
+
+            // Lolos Sensor: Terapkan Delay Sistem 1 Detik
+            setTimeout(() => {
+                const lokasiViews = db.ref('flistories_published/' + currentStoryData.id + '/views');
+                lokasiViews.transaction((currentValue) => {
+                    return (currentValue || 0) + 1;
+                }, (error) => {
+                    if (!error) {
+                        alert("Terima kasih! Anda menyelesaikan bacaan secara valid. 1 Pembaca berhasil ditambahkan ke riwayat cerita.");
+                        document.getElementById('read-page').classList.add('hidden');
+                        currentStoryData = null;
+                    }
+                });
+            }, 1000);
+        }
+
+        // ================= LOGIKA UTAMA SISI ADMIN (CEO PEMRED MANAGEMENT) =================
+        function inisialisasiListenerAdmin() {
+            // Ambil Seluruh Draf Berstatus Antrean (Aman untuk Infinite List)
+            db.ref('flistories_drafts').on('value', (snapshot) => {
+                const container = document.getElementById('draft-container');
+                container.innerHTML = '';
+                cachedDrafts = {}; // Kosongkan memori cache lokal lama
+
+                if (!snapshot.exists()) {
+                    container.innerHTML = `<p class="text-xs text-slate-500 font-medium py-4 text-center">Gudang meja redaksi bersih, tidak ada antrean naskah masuk.</p>`;
+                    return;
+                }
+
+                let totalAntrean = 0;
+                snapshot.forEach(child => {
+                    const data = child.val();
+                    if (data.status === "Antrean") {
+                        totalAntrean++;
+                        const id = child.key;
+                        cachedDrafts[id] = data; // Simpan utuh di memori lokal agar DOM HTML enteng
+
+                        container.innerHTML += `
+                            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700/60 flex flex-col justify-between items-start gap-2 fade-in">
+                                <div class="w-full">
+                                    <h4 class="font-black text-white text-sm truncate">${data.judul}</h4>
+                                    <p class="text-[10px] text-slate-400 font-bold mt-0.5">Oleh: ${data.penulis} | Telp: ${data.hp_penulis}</p>
+                                </div>
+                                <button onclick="bukaModalReviewAdmin('${id}')" class="w-full bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg text-xs hover:bg-emerald-500 transition mt-2">Buka Lembar Seleksi</button>
+                            </div>
+                        `;
+                    }
+                });
+
+                if (totalAntrean === 0) {
+                    container.innerHTML = `<p class="text-xs text-slate-500 font-medium py-4 text-center">Semua naskah warga sudah tuntas diproses.</p>`;
+                }
+            });
+        }
+
+        function bukaModalReviewAdmin(id) {
+            const dataDraf = cachedDrafts[id];
+            if (!dataDraf) return;
+
+            currentSelectedDraftId = id;
+            document.getElementById('admin-info-penulis').innerText = `${dataDraf.penulis} (${dataDraf.hp_penulis})`;
+            document.getElementById('admin-judul').value = dataDraf.judul;
+            document.getElementById('admin-isi').value = dataDraf.isi;
+            
+            // Reset state input cover
+            document.getElementById('admin-cover').value = "";
+            const preview = document.getElementById('admin-cover-preview');
+            preview.src = "";
+            preview.classList.add('hidden');
+            tempCoverBase64 = "";
+
+            document.getElementById('admin-edit-modal').classList.remove('hidden');
+        }
+
+        function tutupAdminEdit() {
+            document.getElementById('admin-edit-modal').classList.add('hidden');
+            currentSelectedDraftId = null;
+        }
+
+        // Trik Base64 Konversi Gambar Galeri ke String
+        function prosesKonversiCover(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    tempCoverBase64 = e.target.result;
+                    const preview = document.getElementById('admin-cover-preview');
+                    preview.src = tempCoverBase64;
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function eksekusiTolakAdmin() {
+            if (!currentSelectedDraftId) return;
+            if (confirm("Apakah Anda yakin ingin mengembalikan naskah ini ke penulis untuk direvisi?")) {
+                // Ubah status menjadi 'Revisi' agar kembali ke mading si penulis
+                db.ref('flistories_drafts/' + currentSelectedDraftId + '/status').set('Revisi', (err) => {
+                    if (!err) {
+                        alert("Status Diperbarui: Naskah dikembalikan ke penulis dengan label 'Butuh Sentuhan Lagi'.");
+                        tutupAdminEdit();
+                    }
+                });
+            }
+        }
+
+        function eksekusiTerbitAdmin() {
+            if (!currentSelectedDraftId) return;
+            
+            const judulTerbit = document.getElementById('admin-judul').value.trim();
+            const isiTerbit = document.getElementById('admin-isi').value.trim();
+            const kategoriTerbit = document.getElementById('admin-kategori').value;
+            const umurTerbit = document.getElementById('admin-umur').value;
+            const namaPenerbit = document.getElementById('admin-penerbit-input').value.trim() || "CV L.Kastara.Narasi";
+
+            if (!tempCoverBase64) return alert("Penerbit Gagal: Desain Cover resmi dari galeri wajib diunggah!");
+            if (!judulTerbit || !isiTerbit) return alert("Kesalahan: Judul atau teks isi naskah tidak boleh kosong!");
+
+            // Membuat Kunci Unik Flis-Code Khas Kelompok Elit
+            const nomorSeriAcak = Math.floor(10000 + Math.random() * 89999);
+            const kodeFlisResmi = `FLIS-CODE #${nomorSeriAcak}`;
+
+            const drafAsli = cachedDrafts[currentSelectedDraftId];
+
+            const naskahSiapPublish = {
+                judul: judulTerbit,
+                isi: isiTerbit,
+                penulis: drafAsli.penulis,
+                hp_penulis: drafAsli.hp_penulis,
+                nik: drafAsli.nik,
+                tahun_lahir: drafAsli.tahun_lahir,
+                cover: tempCoverBase64,
+                kategori: kategoriTerbit,
+                umur: umurTerbit,
+                penerbit: namaPenerbit,
+                flis_code: kodeFlisResmi,
+                views: 0,
+                waktu_terbit: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            // 1. Tembak Dorong ke Folder Utama Beranda Published
+            db.ref('flistories_published').push(naskahSiapPublish, (error) => {
+                if (!error) {
+                    // 2. Perbarui status draf di mading penulis agar berubah hijau 'Mengudara'
+                    db.ref('flistories_drafts/' + currentSelectedDraftId).update({
+                        status: "Mengudara",
+                        flis_code: kodeFlisResmi
+                    }, (err2) => {
+                        if (!err2) {
+                            alert(`BERHASIL PUBLISH! Cerpen resmi mengudara dengan nomor registrasi: ${kodeFlisResmi}`);
+                            tutupAdminEdit();
+                        }
+                    });
+                } else {
+                    alert("Koneksi Firebase terputus, silakan coba beberapa saat lagi.");
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
